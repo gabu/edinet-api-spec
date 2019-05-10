@@ -1,0 +1,7 @@
+gemName: edinet_api_client
+moduleName: EdinetAPIClient
+gemVersion: 1.0.0
+gemAuthor: gabu
+gemAuthorEmail: tsukada.shouya@gmail.com
+gemHomepage: https://github.com/gabu/edinet_api_client
+gemLicense: MIT

@@ -1,0 +1,254 @@
+openapi: 3.0.2
+info:
+  title: EDINET API
+  description: "EDINET API は、利用者が EDINET の画面からではなく、プログラムを介して EDINET のデータベースから効率的にデータを取得できる API(アプリケーション・プログラミング・インターフェース)です。EDINET API により、EDINET 利用者は効率的に開示情報を取得することが可能となります。"
+  termsOfService: https://disclosure.edinet-fsa.go.jp/download/ESE140191.pdf
+  contact:
+    name: "@gabu"
+    url: https://twitter.com/gabu
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+externalDocs:
+  description: Find out more about EDINET API
+  url: https://disclosure.edinet-fsa.go.jp/EKW0EZ0015.html
+servers:
+  - url: https://disclosure.edinet-fsa.go.jp/api/v1
+paths:
+  /documents.json:
+    get:
+      summary: 書類一覧 API
+      description: 書類一覧 API では、「メタデータのみ」または「提出書類一覧及びメタデータ」を取得することが可能です。
+      operationId: findDocuments
+      parameters:
+        - name: date
+          in: query
+          description: 出力対象とする提出書類一覧のファイル日付（YYYY-MM-DD形式）を指定します。
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: string
+          example: "2019-04-01"
+        - name: type
+          in: query
+          description: >
+            取得情報を指定します。
+             * 1: メタデータのみを取得します。
+             * 2: 提出書類一覧及びメタデータを取得します。
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: integer
+            enum: [1, 2]
+            default: 1
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    $ref: "#/components/schemas/Metadata"
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Document"
+  "/documents/{docID}":
+    get:
+      summary: 書類取得 API
+      description: 書類取得 API では、書類をダウンロードすることが可能です。
+      operationId: getDocument
+      parameters:
+        - name: docID
+          in: path
+          description: 取得したい書類の書類管理番号を指定します（書類管理番号は、書類一覧 API で取得した提出書類一覧に基づきます。ただし、開示対象外の書類は取得できません）。
+          required: true
+          schema:
+            type: string
+          example: "S100FMJY"
+        - name: type
+          in: query
+          description: >
+            必要書類を指定します。
+             * 1: 提出本文書及び監査報告書を取得します。
+             * 2: PDF を取得します。
+             * 3: 代替書面・添付文書を取得します。
+             * 4: 英文ファイルを取得します。
+          required: true
+          style: form
+          explode: false
+          schema:
+            type: integer
+            enum: [1, 2, 3, 4]
+          example: 1
+      responses:
+        200:
+          description: OK
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+components:
+  schemas:
+    Metadata:
+      type: object
+      properties:
+        title:
+          type: string
+          description: API の名称が出力されます
+          example: 提出された書類を把握するための API
+        parameter:
+          type: object
+          description: リクエストパラメータの識別子です。
+          properties:
+            date:
+              type: string
+              description: 指定したファイル日付が出力されます。
+              example: "2019-04-01"
+            type:
+              type: string
+              description: 指定した取得情報が出力されます。
+              example: "2"
+        resultset:
+          type: object
+          description: 結果セットの識別子です。
+          properties:
+            count:
+              type: integer
+              description: 指定されたファイル日付における提出書類一覧の件数が出力されます。
+              example: 2
+        processDateTime:
+          type: string
+          format: date-time
+          description: 提出書類一覧の更新時間が出力されます。提出書類一覧の内容に変更がない場合でも書類一覧更新日時は更新されます。
+          example: "2019-04-01 13:01"
+        status:
+          type: string
+          description: ステータスコードが出力されます
+          example: "200"
+        message:
+          type: string
+          description: メッセージが出力されます
+          example: OK
+    Document:
+      type: object
+      properties:
+        seqNumber:
+          type: integer
+          description: ファイル日付ごとの連番です。
+          example: 1
+        docID:
+          type: string
+          description: 書類管理番号が出力されます。
+          example: "S1000001"
+        edinetCode:
+          type: string
+          description: 提出者の EDINET コードが出力されます。
+          example: "E10001"
+        secCode:
+          type: string
+          description: 提出者の証券コードが出力されます。
+          example: "10000"
+        JCN:
+          type: string
+          description: 提出者の法人番号が出力されます。
+          example: "6000012010023"
+        filerName:
+          type: string
+          description: 提出者の名前が出力されます。
+          example: "エディネット株式会社"
+        fundCode:
+          type: string
+          description: ファンドコードが出力されます。
+          example: "G00001"
+        ordinanceCode:
+          type: string
+          description: 府令コードが出力されます。
+          example: "030"
+        formCode:
+          type: string
+          description: 様式コードが出力されます。
+          example: "04A000"
+        docTypeCode:
+          type: string
+          description: 書類種別コードが出力されます。
+          example: "030"
+        periodStart:
+          type: string
+          description: 期間（自）が出力されます。
+          example: "2019-04-01"
+        periodEnd:
+          type: string
+          description: 期間（至）が出力されます。
+          example: "2020-03-31"
+        submitDateTime:
+          type: string
+          description: 提出日時が出力されます。
+          example: "2019-04-01 12:34"
+        docDescription:
+          type: string
+          description: EDINET の閲覧サイトの書類検索結果画面において、「提出書類」欄に表示される文字列が出力されます。
+          example: "有価証券届出書(内国投資信託受益証券)"
+        issuerEdinetCode:
+          type: string
+          description: 大量保有について発行会社の EDINET コードが出力されます。
+          example: null
+        subjectEdinetCode:
+          type: string
+          description: 公開買付けについて対象となる EDINET コードが出力されます。
+          example: null
+        subsidiaryEdinetCode:
+          type: string
+          description: 小会社の EDINET コードが出力されます。複数存在する場合（最大10個）、","（カンマ）で結合した文字列が出力されます。
+          example: null
+        currentReportReason:
+          type: string
+          description: 臨時報告書の提出事由が出力されます。複数存在する場合、","（カンマ）で結合した文字列が出力されます。
+          example: null
+        parentDocID:
+          type: string
+          description: 親書類管理番号が出力されます。
+          example: null
+        opeDateTime:
+          type: string
+          description: 「2-1-6 財務局職員による書類情報修正」、「2-1-7 財務局職員による書類の不開示」、磁気ディスク退出及び紙面提出を行った日時が出力されます。
+          example: null
+        withdrawalStatus:
+          type: string
+          description: 取下書は"1"、取り下げられた書類は"2"、それ以外は"0"が出力されます。
+          example: "0"
+        docInfoEditStatus:
+          type: string
+          description: 財務局職員が書類を修正した情報は"1"、修正された書類は"2"、それ以外は"0"が出力されます。
+          example: "0"
+        disclosureStatus:
+          type: string
+          description: 財務局職員によって書類の不開示を開始した情報は"1"、不開示とされている書類は"2"、財務局職員によって書類の不開示を解除した情報は"3"、それ以外は"0"が出力されます。
+          example: "0"
+        xbrlFlag:
+          type: string
+          description: 書類に XBRL がある場合は"1"、それ以外は"0"が出力されます。
+          example: "1"
+        pdfFlag:
+          type: string
+          description: 書類に PDF がある場合は"1"、それ以外は"0"が出力されます。
+          example: "1"
+        attachDocFlag:
+          type: string
+          description: 書類に代替書面・添付文書がある場合は"1"、それ以外は"0"が出力されます。
+          example: "1"
+        englishDocFlag:
+          type: string
+          description: 書類に英文ファイルがある場合は"1"、それ以外は"0"が出力されます。
+          example: "0"
